@@ -1,16 +1,6 @@
 using System;
 using UnityEngine;
 
-public enum GameState
-{
-    Init,
-    Ready,
-    Playing,
-    Paused,
-    GameCompleted,
-    GameOver
-}
-
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
