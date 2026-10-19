@@ -3,7 +3,7 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 
-public class SpriteGenerator : EditorWindow
+public class SpriteGeneratorWindow : EditorWindow
 {
     private enum Shape { Rectangle, RoundedRectangle, Ellipse }
     private enum Fill { Solid, Gradient }
@@ -14,6 +14,8 @@ public class SpriteGenerator : EditorWindow
     [SerializeField] private GradientDirection direction = GradientDirection.Vertical;
     [SerializeField] private int width = 512;
     [SerializeField] private int height = 256;
+    [SerializeField] private bool lockAspectRatio = false;
+    [SerializeField] private float lockedAspectRatio = 2f;
     [SerializeField] private float cornerRadius = 32f;
     [SerializeField] private Color solidColor = Color.white;
     [SerializeField] private Gradient gradient = new Gradient();
@@ -29,7 +31,7 @@ public class SpriteGenerator : EditorWindow
     [MenuItem("Tools/Sprite Generator")]
     private static void Open()
     {
-        GetWindow<SpriteGenerator>("Sprite Generator").minSize = new Vector2(360, 550);
+        GetWindow<SpriteGeneratorWindow>("Sprite Generator").minSize = new Vector2(360, 550);
     }
 
     private void OnEnable()
@@ -60,8 +62,35 @@ public class SpriteGenerator : EditorWindow
 
         EditorGUILayout.LabelField("Shape", EditorStyles.boldLabel);
         shape = (Shape)EditorGUILayout.EnumPopup("Type", shape);
-        width = EditorGUILayout.IntSlider("Width (px)", width, 1, MaxDimension);
-        height = EditorGUILayout.IntSlider("Height (px)", height, 1, MaxDimension);
+        if (shape != Shape.Ellipse)
+        {
+            EditorGUI.BeginChangeCheck();
+            bool newLock = EditorGUILayout.Toggle("Lock Aspect Ratio", lockAspectRatio);
+            if (EditorGUI.EndChangeCheck())
+            {
+                lockAspectRatio = newLock;
+                if (lockAspectRatio)
+                    lockedAspectRatio = (float)width / Mathf.Max(1, height);
+            }
+        }
+
+        EditorGUI.BeginChangeCheck();
+        int newWidth = EditorGUILayout.IntField("Width (px)", width);
+        if (EditorGUI.EndChangeCheck())
+        {
+            width = Mathf.Clamp(newWidth, 1, MaxDimension);
+            if (shape != Shape.Ellipse && lockAspectRatio)
+                height = Mathf.Clamp(Mathf.RoundToInt(width / Mathf.Max(0.0001f, lockedAspectRatio)), 1, MaxDimension);
+        }
+
+        EditorGUI.BeginChangeCheck();
+        int newHeight = EditorGUILayout.IntField("Height (px)", height);
+        if (EditorGUI.EndChangeCheck())
+        {
+            height = Mathf.Clamp(newHeight, 1, MaxDimension);
+            if (shape != Shape.Ellipse && lockAspectRatio)
+                width = Mathf.Clamp(Mathf.RoundToInt(height * lockedAspectRatio), 1, MaxDimension);
+        }
         if (shape == Shape.RoundedRectangle)
         {
             cornerRadius = EditorGUILayout.Slider("Corner Radius (px)", cornerRadius, 0f, Mathf.Min(width, height) * 0.5f);
