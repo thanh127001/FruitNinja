@@ -6,6 +6,7 @@ public class CharacterController : MonoBehaviour
     [Header("Jump Settings")]
     [SerializeField] private float horizontalForce = 5f;
     [SerializeField] private float upwardForce = 2f;
+    [SerializeField] private float upwardFadeDistance = 1f;
 
     [Header("Wall Climb Settings")]
     [SerializeField] private float wallStickForce = 2f;
@@ -105,11 +106,13 @@ public class CharacterController : MonoBehaviour
         isTouchingWall = false;
         currentWall = null;
 
-        rb.linearVelocity = Vector2.zero;
+        rb.linearVelocityX = 0f;
 
-        float verticalForce = rb.position.y < targetY
-            ? upwardForce
-            : 0f;
+        float distance = targetY - rb.position.y;
+        float upwardRatio = Mathf.Clamp01(
+            distance / Mathf.Max(0.01f, upwardFadeDistance)
+        );
+        float verticalForce = upwardForce * upwardRatio;
 
         Vector2 force = new Vector2(
             direction * horizontalForce,
