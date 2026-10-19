@@ -7,15 +7,15 @@ public class CharacterController : MonoBehaviour
     [SerializeField] private float horizontalForce = 5f;
     [SerializeField] private float upwardForce = 2f;
 
-    [Header("Wall Settings")]
+    [Header("Wall Climb Settings")]
     [SerializeField] private float wallStickForce = 2f;
+    [SerializeField] private float climbForce = 12f;
     [SerializeField] private float targetY = 3f;
 
     private Rigidbody2D rb;
 
     private bool jumpable = true;
     private bool isTouchingWall = false;
-    private bool isYLocked = false;
 
     private Collider2D currentWall;
     private int verticalBorderLayer;
@@ -36,11 +36,10 @@ public class CharacterController : MonoBehaviour
         if (currentWall == null)
         {
             isTouchingWall = false;
-            isYLocked = false;
             return;
         }
 
-        // Keep the character attached to the wall.
+        // Push the character toward the contacted wall.
         float direction = Mathf.Sign(
             currentWall.bounds.center.x - transform.position.x
         );
@@ -50,16 +49,13 @@ public class CharacterController : MonoBehaviour
             ForceMode2D.Force
         );
 
-        // Lock Y once the character reaches targetY.
-        if (!isYLocked && rb.position.y >= targetY)
+        // Climb only while below the target height.
+        if (rb.position.y < targetY)
         {
-            isYLocked = true;
-        }
-
-        if (isYLocked)
-        {
-            rb.position = new Vector2(rb.position.x, targetY);
-            rb.linearVelocityY = 0f;
+            rb.AddForce(
+                Vector2.up * climbForce,
+                ForceMode2D.Force
+            );
         }
     }
 
@@ -71,8 +67,8 @@ public class CharacterController : MonoBehaviour
             return;
 
         jumpable = false;
-        isYLocked = false;
 
+        // Jump away from the wall if currently attached.
         float direction;
 
         if (isTouchingWall && currentWall != null)
@@ -94,6 +90,7 @@ public class CharacterController : MonoBehaviour
             direction = Random.value < 0.5f ? -1f : 1f;
         }
 
+        // Stop applying wall forces immediately.
         isTouchingWall = false;
         currentWall = null;
 
@@ -123,7 +120,6 @@ public class CharacterController : MonoBehaviour
         {
             currentWall = null;
             isTouchingWall = false;
-            isYLocked = false;
         }
     }
 
