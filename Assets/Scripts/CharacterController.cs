@@ -96,9 +96,13 @@ public class CharacterController : MonoBehaviour
 
         rb.linearVelocity = Vector2.zero;
 
+        float verticalForce = rb.position.y < targetY
+            ? upwardForce
+            : 0f;
+
         Vector2 force = new Vector2(
             direction * horizontalForce,
-            upwardForce
+            verticalForce
         );
 
         rb.AddForce(force, ForceMode2D.Impulse);
