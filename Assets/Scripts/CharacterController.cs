@@ -16,6 +16,8 @@ public class CharacterController : MonoBehaviour
 
     private bool jumpable = true;
     private bool isTouchingWall = false;
+    private bool isAnchored = false;
+    private RigidbodyConstraints2D originalConstraints;
 
     private Collider2D currentWall;
     private int verticalBorderLayer;
@@ -23,6 +25,7 @@ public class CharacterController : MonoBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+        originalConstraints = rb.constraints;
         verticalBorderLayer = LayerMask.NameToLayer("VerticalBorder");
     }
 
@@ -36,6 +39,7 @@ public class CharacterController : MonoBehaviour
         if (currentWall == null)
         {
             isTouchingWall = false;
+            ReleaseAnchor();
             return;
         }
 
@@ -49,8 +53,14 @@ public class CharacterController : MonoBehaviour
             ForceMode2D.Force
         );
 
-        // Climb only while below the target height.
-        if (rb.position.y < targetY)
+        if (isAnchored)
+            return;
+
+        if (rb.position.y >= targetY)
+        {
+            AnchorAtTargetY();
+        }
+        else
         {
             rb.AddForce(
                 Vector2.up * climbForce,
@@ -66,6 +76,7 @@ public class CharacterController : MonoBehaviour
             !jumpable)
             return;
 
+        ReleaseAnchor();
         jumpable = false;
 
         // Jump away from the wall if currently attached.
@@ -124,7 +135,25 @@ public class CharacterController : MonoBehaviour
         {
             currentWall = null;
             isTouchingWall = false;
+            ReleaseAnchor();
         }
+    }
+
+    private void AnchorAtTargetY()
+    {
+        isAnchored = true;
+        rb.position = new Vector2(rb.position.x, targetY);
+        rb.linearVelocityY = 0f;
+        rb.constraints = originalConstraints | RigidbodyConstraints2D.FreezePositionY;
+    }
+
+    private void ReleaseAnchor()
+    {
+        if (!isAnchored)
+            return;
+
+        isAnchored = false;
+        rb.constraints = originalConstraints;
     }
 
     private bool IsVerticalBorder(Collider2D collider)
