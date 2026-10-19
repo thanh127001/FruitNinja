@@ -5,7 +5,7 @@ public class CharacterController : MonoBehaviour
 {
     [Header("Movement Settings")]
     [SerializeField] private float horizontalForce = 5f;
-    [SerializeField] private float upwardForce = 2f;
+    [SerializeField] private float upwardSpeed = 3f;
 
     private Rigidbody2D rb;
 
@@ -24,8 +24,8 @@ public class CharacterController : MonoBehaviour
             !hasJumped)
             return;
 
-        // Continuous upward force, independent of Jump.
-        rb.AddForce(Vector2.up * upwardForce, ForceMode2D.Force);
+        // Maintain constant upward speed after the first jump.
+        rb.linearVelocityY = upwardSpeed;
     }
 
     public void Jump()
