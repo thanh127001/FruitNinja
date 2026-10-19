@@ -9,6 +9,7 @@ public class CharacterController : MonoBehaviour
 
     private Rigidbody2D rb;
     private bool canJump = true;
+    private bool hasLeftBorder = true;
     private int verticalBorderLayer;
 
     private void Awake()
@@ -40,6 +41,7 @@ public class CharacterController : MonoBehaviour
         if (state == GameState.Ready)
         {
             canJump = true;
+            hasLeftBorder = true;
             rb.linearVelocity = Vector2.zero;
         }
     }
@@ -52,6 +54,7 @@ public class CharacterController : MonoBehaviour
             return;
 
         canJump = false;
+        hasLeftBorder = false;
 
         float direction;
 
@@ -78,10 +81,19 @@ public class CharacterController : MonoBehaviour
             GameManager.Instance.State != GameState.Playing)
             return;
 
-        if (collision.collider is BoxCollider2D &&
-            collision.gameObject.layer == verticalBorderLayer)
-        {
+        if (hasLeftBorder && IsVerticalBorder(collision))
             canJump = true;
-        }
+    }
+
+    private void OnCollisionExit2D(Collision2D collision)
+    {
+        if (IsVerticalBorder(collision))
+            hasLeftBorder = true;
+    }
+
+    private bool IsVerticalBorder(Collision2D collision)
+    {
+        return collision.collider is BoxCollider2D &&
+               collision.gameObject.layer == verticalBorderLayer;
     }
 }
