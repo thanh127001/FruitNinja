@@ -3,29 +3,16 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody2D))]
 public class CharacterController : MonoBehaviour
 {
-    [Header("Movement Settings")]
+    [Header("Jump Settings")]
     [SerializeField] private float horizontalForce = 5f;
-    [SerializeField] private float upwardSpeed = 3f;
+    [SerializeField] private float upwardForce = 2f;
 
     private Rigidbody2D rb;
-
     private bool jumpable = true;
-    private bool hasJumped = false;
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
-    }
-
-    private void FixedUpdate()
-    {
-        if (GameManager.Instance == null ||
-            GameManager.Instance.State != GameState.Playing ||
-            !hasJumped)
-            return;
-
-        // Maintain constant upward speed after the first jump.
-        rb.linearVelocityY = upwardSpeed;
     }
 
     public void Jump()
@@ -36,7 +23,6 @@ public class CharacterController : MonoBehaviour
             return;
 
         jumpable = false;
-        hasJumped = true;
 
         float direction;
 
@@ -47,14 +33,14 @@ public class CharacterController : MonoBehaviour
         else
             direction = Random.value < 0.5f ? -1f : 1f;
 
-        // Reset horizontal velocity only.
-        rb.linearVelocityX = 0f;
+        rb.linearVelocity = Vector2.zero;
 
-        // Horizontal impulse only.
-        rb.AddForce(
-            Vector2.right * direction * horizontalForce,
-            ForceMode2D.Impulse
+        Vector2 force = new Vector2(
+            direction * horizontalForce,
+            upwardForce
         );
+
+        rb.AddForce(force, ForceMode2D.Impulse);
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
