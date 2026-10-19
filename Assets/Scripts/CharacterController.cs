@@ -7,17 +7,19 @@ public class CharacterController : MonoBehaviour
     [SerializeField] private float horizontalForce = 5f;
     [SerializeField] private float upwardForce = 2f;
 
-    [Header("Wall Climb Settings")]
+    [Header("Wall Settings")]
     [SerializeField] private float wallStickForce = 2f;
     [SerializeField] private float climbForce = 12f;
     [SerializeField] private float targetY = 3f;
+
+    [Header("Anchor Settings")]
+    [SerializeField] private float anchorStrength = 30f;
+    [SerializeField] private float anchorDamping = 10f;
 
     private Rigidbody2D rb;
 
     private bool jumpable = true;
     private bool isTouchingWall = false;
-    private bool isAnchored = false;
-    private RigidbodyConstraints2D originalConstraints;
 
     private Collider2D currentWall;
     private int verticalBorderLayer;
@@ -25,7 +27,6 @@ public class CharacterController : MonoBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
-        originalConstraints = rb.constraints;
         verticalBorderLayer = LayerMask.NameToLayer("VerticalBorder");
     }
 
@@ -39,13 +40,12 @@ public class CharacterController : MonoBehaviour
         if (currentWall == null)
         {
             isTouchingWall = false;
-            ReleaseAnchor();
             return;
         }
 
-        // Push the character toward the contacted wall.
+        // Keep character attached to wall.
         float direction = Mathf.Sign(
-            currentWall.bounds.center.x - transform.position.x
+            currentWall.bounds.center.x - rb.position.x
         );
 
         rb.AddForce(
@@ -53,20 +53,32 @@ public class CharacterController : MonoBehaviour
             ForceMode2D.Force
         );
 
-        if (isAnchored)
-            return;
+        // Apply vertical force to reach and hold targetY.
+        float distance = targetY - rb.position.y;
 
-        if (rb.position.y >= targetY)
+        float gravityCompensation =
+            -Physics2D.gravity.y * rb.gravityScale * rb.mass;
+
+        float verticalForce;
+
+        if (distance > 0f)
         {
-            AnchorAtTargetY();
+            // Climb toward targetY.
+            verticalForce = climbForce;
         }
         else
         {
-            rb.AddForce(
-                Vector2.up * climbForce,
-                ForceMode2D.Force
-            );
+            // Hold near targetY using a damped spring.
+            verticalForce =
+                gravityCompensation +
+                distance * anchorStrength -
+                rb.linearVelocityY * anchorDamping;
         }
+
+        rb.AddForce(
+            Vector2.up * verticalForce,
+            ForceMode2D.Force
+        );
     }
 
     public void Jump()
@@ -76,23 +88,21 @@ public class CharacterController : MonoBehaviour
             !jumpable)
             return;
 
-        ReleaseAnchor();
         jumpable = false;
 
-        // Jump away from the wall if currently attached.
         float direction;
 
         if (isTouchingWall && currentWall != null)
         {
             direction = Mathf.Sign(
-                transform.position.x - currentWall.bounds.center.x
+                rb.position.x - currentWall.bounds.center.x
             );
         }
-        else if (transform.position.x < 0f)
+        else if (rb.position.x < 0f)
         {
             direction = 1f;
         }
-        else if (transform.position.x > 0f)
+        else if (rb.position.x > 0f)
         {
             direction = -1f;
         }
@@ -101,22 +111,20 @@ public class CharacterController : MonoBehaviour
             direction = Random.value < 0.5f ? -1f : 1f;
         }
 
-        // Stop applying wall forces immediately.
         isTouchingWall = false;
         currentWall = null;
 
         rb.linearVelocityX = 0f;
 
+        // No upward impulse at or above targetY.
         float verticalForce = rb.position.y < targetY
             ? upwardForce
             : 0f;
 
-        Vector2 force = new Vector2(
-            direction * horizontalForce,
-            verticalForce
+        rb.AddForce(
+            new Vector2(direction * horizontalForce, verticalForce),
+            ForceMode2D.Impulse
         );
-
-        rb.AddForce(force, ForceMode2D.Impulse);
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
@@ -135,25 +143,7 @@ public class CharacterController : MonoBehaviour
         {
             currentWall = null;
             isTouchingWall = false;
-            ReleaseAnchor();
         }
-    }
-
-    private void AnchorAtTargetY()
-    {
-        isAnchored = true;
-        rb.position = new Vector2(rb.position.x, targetY);
-        rb.linearVelocityY = 0f;
-        rb.constraints = originalConstraints | RigidbodyConstraints2D.FreezePositionY;
-    }
-
-    private void ReleaseAnchor()
-    {
-        if (!isAnchored)
-            return;
-
-        isAnchored = false;
-        rb.constraints = originalConstraints;
     }
 
     private bool IsVerticalBorder(Collider2D collider)
