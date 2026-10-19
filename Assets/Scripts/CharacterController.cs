@@ -30,6 +30,42 @@ public class CharacterController : MonoBehaviour
         verticalBorderLayer = LayerMask.NameToLayer("VerticalBorder");
     }
 
+    private void Start()
+    {
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.OnGameStateChanged += HandleGameStateChanged;
+            HandleGameStateChanged();
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (GameManager.Instance != null)
+            GameManager.Instance.OnGameStateChanged -= HandleGameStateChanged;
+    }
+
+    private void HandleGameStateChanged()
+    {
+        if (GameManager.Instance != null &&
+            GameManager.Instance.State == GameState.Ready)
+        {
+            ResetCharacter();
+        }
+    }
+
+    private void ResetCharacter()
+    {
+        jumpable = true;
+        isTouchingWall = false;
+        currentWall = null;
+
+        rb.linearVelocity = Vector2.zero;
+        rb.angularVelocity = 0f;
+        rb.position = Vector2.zero;
+        rb.rotation = 0f;
+    }
+
     private void FixedUpdate()
     {
         if (GameManager.Instance == null ||
@@ -129,6 +165,10 @@ public class CharacterController : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
+        if (GameManager.Instance == null ||
+            GameManager.Instance.State != GameState.Playing)
+            return;
+
         if (!IsVerticalBorder(collision.collider))
             return;
 
