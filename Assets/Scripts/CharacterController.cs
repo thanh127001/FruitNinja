@@ -4,8 +4,8 @@ using UnityEngine;
 public class CharacterController : MonoBehaviour
 {
     [Header("Jump Settings")]
-    [SerializeField] private float jumpForce = 10f;
     [SerializeField] private float horizontalForce = 5f;
+    [SerializeField] private float upwardForce = 2f;
 
     private Rigidbody2D rb;
 
@@ -30,7 +30,7 @@ public class CharacterController : MonoBehaviour
             direction = Random.value < 0.5f ? -1f : 1f;
 
         rb.linearVelocity = Vector2.zero;
-        Vector2 force = new Vector2(direction * horizontalForce, jumpForce);
+        Vector2 force = new Vector2(direction * horizontalForce, upwardForce);
         rb.AddForce(force, ForceMode2D.Impulse);
     }
 }
