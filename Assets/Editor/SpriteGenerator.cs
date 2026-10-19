@@ -72,7 +72,7 @@ public class SpriteGenerator : EditorWindow
         fill = (Fill)EditorGUILayout.EnumPopup("Fill", fill);
         if (fill == Fill.Solid)
         {
-            solidColor = EditorGUILayout.ColorField("Color", solidColor, true, true, false);
+            solidColor = EditorGUILayout.ColorField("Color", solidColor);
         }
         else
         {
