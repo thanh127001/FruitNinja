@@ -8,17 +8,50 @@ public class CharacterController : MonoBehaviour
     [SerializeField] private float upwardForce = 2f;
 
     private Rigidbody2D rb;
+    private bool canJump = true;
+    private int verticalBorderLayer;
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+        verticalBorderLayer = LayerMask.NameToLayer("VerticalBorder");
+    }
+
+    private void Start()
+    {
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.OnGameStateChanged += HandleGameStateChanged;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.OnGameStateChanged -= HandleGameStateChanged;
+        }
+    }
+
+    private void HandleGameStateChanged()
+    {
+        GameState state = GameManager.Instance.State;
+
+        if (state == GameState.Ready)
+        {
+            canJump = true;
+            rb.linearVelocity = Vector2.zero;
+        }
     }
 
     public void Jump()
     {
         if (GameManager.Instance == null ||
-            GameManager.Instance.State != GameState.Playing)
+            GameManager.Instance.State != GameState.Playing ||
+            !canJump)
             return;
+
+        canJump = false;
 
         float direction;
 
@@ -30,7 +63,25 @@ public class CharacterController : MonoBehaviour
             direction = Random.value < 0.5f ? -1f : 1f;
 
         rb.linearVelocity = Vector2.zero;
-        Vector2 force = new Vector2(direction * horizontalForce, upwardForce);
+
+        Vector2 force = new Vector2(
+            direction * horizontalForce,
+            upwardForce
+        );
+
         rb.AddForce(force, ForceMode2D.Impulse);
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (GameManager.Instance == null ||
+            GameManager.Instance.State != GameState.Playing)
+            return;
+
+        if (collision.collider is BoxCollider2D &&
+            collision.gameObject.layer == verticalBorderLayer)
+        {
+            canJump = true;
+        }
     }
 }
