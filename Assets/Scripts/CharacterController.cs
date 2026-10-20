@@ -10,8 +10,10 @@ public class CharacterController : MonoBehaviour
     [Header("Climb Settings")]
     [SerializeField] private float upwardAcceleration = 5f;
     [SerializeField] private float wallStickForce = 2f;
+    [SerializeField, Min(0f)] private float wallClimbSpeed = 3f;
 
     private Rigidbody2D rb;
+    private float originalGravityScale;
     private Collider2D currentWall;
     private int verticalBorderLayer;
 
@@ -23,6 +25,7 @@ public class CharacterController : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         rb.interpolation = RigidbodyInterpolation2D.Interpolate;
+        originalGravityScale = rb.gravityScale;
         verticalBorderLayer = LayerMask.NameToLayer("VerticalBorder");
 
         ResetCharacter();
@@ -55,6 +58,7 @@ public class CharacterController : MonoBehaviour
         jumpable = true;
         isTouchingWall = false;
         currentWall = null;
+        rb.gravityScale = originalGravityScale;
 
         rb.linearVelocity = Vector2.zero;
         rb.angularVelocity = 0f;
@@ -69,21 +73,24 @@ public class CharacterController : MonoBehaviour
             !hasJumped)
             return;
 
-        // Apply continuous upward acceleration after the first jump.
-        // Compensate gravity so the character keeps rising without a height limit.
-        float gravityCompensation = -Physics2D.gravity.y * rb.gravityScale;
-        float forceY = rb.mass * (upwardAcceleration + gravityCompensation);
-
-        rb.AddForce(Vector2.up * forceY, ForceMode2D.Force);
-
-        if (!isTouchingWall)
-            return;
-
-        if (currentWall == null)
+        if (isTouchingWall && currentWall == null)
         {
             isTouchingWall = false;
+            jumpable = false;
+            rb.gravityScale = originalGravityScale;
+        }
+
+        if (!isTouchingWall)
+        {
+            // Free flight: accelerate upward using force.
+            float gravityCompensation = -Physics2D.gravity.y * rb.gravityScale;
+            float forceY = rb.mass * (upwardAcceleration + gravityCompensation);
+            rb.AddForce(Vector2.up * forceY, ForceMode2D.Force);
             return;
         }
+
+        // Wall climb: move upward at a constant speed without upward force.
+        rb.linearVelocityY = wallClimbSpeed;
 
         // Keep pushing toward the contacted wall.
         float direction = Mathf.Sign(
@@ -127,6 +134,7 @@ public class CharacterController : MonoBehaviour
 
         isTouchingWall = false;
         currentWall = null;
+        rb.gravityScale = originalGravityScale;
 
         rb.linearVelocityX = 0f;
 
@@ -150,6 +158,8 @@ public class CharacterController : MonoBehaviour
         currentWall = collision.collider;
         isTouchingWall = true;
         jumpable = true;
+        rb.gravityScale = 0f;
+        rb.linearVelocityY = wallClimbSpeed;
     }
 
     private void OnCollisionExit2D(Collision2D collision)
@@ -160,6 +170,7 @@ public class CharacterController : MonoBehaviour
         currentWall = null;
         isTouchingWall = false;
         jumpable = false;
+        rb.gravityScale = originalGravityScale;
     }
 
     private bool IsVerticalBorder(Collider2D collider)
