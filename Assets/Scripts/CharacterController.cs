@@ -8,8 +8,10 @@ public class CharacterController : MonoBehaviour
     [SerializeField] private float upwardForce = 2f;
 
     [Header("Climb Settings")]
-    [SerializeField] private float targetClimbSpeed = 5f;
-    [SerializeField] private float climbAcceleration = 5f;
+    [Header("Height Control")]
+    [SerializeField] private float targetY = 0f;
+    [SerializeField] private float heightStrength = 20f;
+    [SerializeField] private float heightDamping = 9f;
     [SerializeField] private float wallStickForce = 2f;
 
     private Rigidbody2D rb;
@@ -70,8 +72,9 @@ public class CharacterController : MonoBehaviour
             return;
 
         // Continuous upward force after the first jump.
-        float speedError = targetClimbSpeed - rb.linearVelocityY;
-        float acceleration = speedError * climbAcceleration;
+        float positionError = targetY - rb.position.y;
+        float acceleration = positionError * heightStrength
+            - rb.linearVelocityY * heightDamping;
         float gravityCompensation = -Physics2D.gravity.y * rb.gravityScale;
         float forceY = rb.mass * (acceleration + gravityCompensation);
 
