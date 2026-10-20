@@ -5,6 +5,7 @@ using System.IO;
 public class ImageResizeWindow : EditorWindow
 {
     private Texture2D source;
+    private Texture2D referenceImage;
     private int targetWidth = 1024;
     private int targetHeight = 1024;
     private float centerX = 0.5f;
@@ -23,6 +24,19 @@ public class ImageResizeWindow : EditorWindow
         EditorGUI.BeginChangeCheck();
         source = (Texture2D)EditorGUILayout.ObjectField(
             "Source Image", source, typeof(Texture2D), false);
+
+        EditorGUILayout.Space(10);
+        Texture2D newReference = (Texture2D)EditorGUILayout.ObjectField(
+            "Reference Image", referenceImage, typeof(Texture2D), false);
+        if (newReference != referenceImage)
+        {
+            referenceImage = newReference;
+            if (referenceImage != null)
+            {
+                targetWidth = referenceImage.width;
+                targetHeight = referenceImage.height;
+            }
+        }
 
         EditorGUILayout.Space(10);
         EditorGUILayout.LabelField("Output Size", EditorStyles.boldLabel);
