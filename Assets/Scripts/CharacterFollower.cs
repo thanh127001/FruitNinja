@@ -6,44 +6,21 @@ public class CharacterFollower : MonoBehaviour
     [SerializeField] private Transform character;
 
     [Header("Follow Settings")]
-    [SerializeField, Min(0.01f)]
-    private float smoothTime = 0.15f;
-
-    [SerializeField, Min(0f)]
-    private float maxSpeed = 30f;
-
-    private float velocityY;
+    [SerializeField] private float offsetY = 0f;
 
     private void LateUpdate()
     {
         if (character == null)
             return;
 
-        float currentY = transform.position.y;
+        float targetY = character.position.y + offsetY;
 
-        // Never target a position below the current Y.
-        float targetY = Mathf.Max(
-            currentY,
-            character.position.y
-        );
+        // Follow instantly upward, never move down.
+        if (targetY <= transform.position.y)
+            return;
 
-        float newY = Mathf.SmoothDamp(
-            currentY,
-            targetY,
-            ref velocityY,
-            smoothTime,
-            maxSpeed,
-            Time.deltaTime
-        );
-
-        transform.position = new Vector3(
-            transform.position.x,
-            Mathf.Max(currentY, newY),
-            transform.position.z
-        );
-
-        // Stop only after the upward velocity has decayed.
-        if (velocityY < 0f)
-            velocityY = 0f;
+        Vector3 position = transform.position;
+        position.y = targetY;
+        transform.position = position;
     }
 }
