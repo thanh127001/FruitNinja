@@ -20,13 +20,8 @@ public class CameraFollowY : MonoBehaviour
         if (target == null)
             return;
 
-        float desiredY = target.position.y + offsetY;
-
-        if (desiredY <= highestCameraY)
-        {
-            verticalVelocity = 0f;
-            return;
-        }
+        // Never allow the target camera height to move downward.
+        float desiredY = Mathf.Max(highestCameraY, target.position.y + offsetY);
 
         float nextY = smoothTime <= 0f
             ? desiredY
@@ -37,7 +32,9 @@ public class CameraFollowY : MonoBehaviour
                 smoothTime
             );
 
+        // Prevent even small downward movements due to smoothing.
         highestCameraY = Mathf.Max(highestCameraY, nextY);
+
         Vector3 position = transform.position;
         position.y = highestCameraY;
         transform.position = position;
