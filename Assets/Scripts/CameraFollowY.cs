@@ -1,5 +1,6 @@
 using UnityEngine;
 
+[DisallowMultipleComponent]
 public class CameraFollowY : MonoBehaviour
 {
     [Header("Follow Settings")]
@@ -7,7 +8,6 @@ public class CameraFollowY : MonoBehaviour
     [SerializeField] private float offsetY = 0f;
     [SerializeField, Min(0f)] private float smoothTime = 0.15f;
 
-    private float verticalVelocity;
     private float highestCameraY;
 
     private void Awake()
@@ -20,19 +20,16 @@ public class CameraFollowY : MonoBehaviour
         if (target == null)
             return;
 
-        // Never allow the target camera height to move downward.
-        float desiredY = Mathf.Max(highestCameraY, target.position.y + offsetY);
+        float desiredY = target.position.y + offsetY;
+        if (desiredY <= highestCameraY)
+            return;
 
-        float nextY = smoothTime <= 0f
-            ? desiredY
-            : Mathf.SmoothDamp(
-                highestCameraY,
-                desiredY,
-                ref verticalVelocity,
-                smoothTime
-            );
+        // Frame-rate-independent exponential smoothing without velocity resets.
+        float blend = smoothTime <= 0f
+            ? 1f
+            : 1f - Mathf.Exp(-Time.deltaTime / smoothTime);
 
-        // Prevent even small downward movements due to smoothing.
+        float nextY = Mathf.Lerp(highestCameraY, desiredY, blend);
         highestCameraY = Mathf.Max(highestCameraY, nextY);
 
         Vector3 position = transform.position;
