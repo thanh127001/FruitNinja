@@ -9,7 +9,6 @@ public class CharacterController : MonoBehaviour
 
     [Header("Climb Settings")]
     [SerializeField] private float climbForce = 12f;
-    [SerializeField] private float climbDrag = 3f;
     [SerializeField] private float wallStickForce = 2f;
 
     private Rigidbody2D rb;
@@ -70,11 +69,8 @@ public class CharacterController : MonoBehaviour
             return;
 
         // Continuous upward force after the first jump.
-        float velocityY = rb.linearVelocityY;
-        float forceY = climbForce - climbDrag * velocityY;
-
         rb.AddForce(
-            Vector2.up * forceY,
+            Vector2.up * climbForce,
             ForceMode2D.Force
         );
 
