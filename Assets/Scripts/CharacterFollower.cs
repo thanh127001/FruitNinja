@@ -1,26 +1,33 @@
 using UnityEngine;
+using UnityEngine.Animations;
 
+[RequireComponent(typeof(PositionConstraint))]
 public class CharacterFollower : MonoBehaviour
 {
     [Header("Target")]
     [SerializeField] private Transform character;
 
-    [Header("Follow Settings")]
-    [SerializeField] private float offsetY = 0f;
+    private PositionConstraint positionConstraint;
+
+    private void Awake()
+    {
+        positionConstraint = GetComponent<PositionConstraint>();
+
+        positionConstraint.translationAxis = Axis.Y;
+        positionConstraint.constraintActive = false;
+    }
 
     private void LateUpdate()
     {
         if (character == null)
             return;
 
-        float targetY = character.position.y + offsetY;
+        bool shouldFollow =
+            transform.position.y < character.position.y;
 
-        // Follow instantly upward, never move down.
-        if (targetY <= transform.position.y)
-            return;
-
-        Vector3 position = transform.position;
-        position.y = targetY;
-        transform.position = position;
+        if (positionConstraint.constraintActive != shouldFollow)
+        {
+            positionConstraint.constraintActive = shouldFollow;
+        }
     }
 }
