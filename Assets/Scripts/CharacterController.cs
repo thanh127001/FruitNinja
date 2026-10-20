@@ -8,10 +8,7 @@ public class CharacterController : MonoBehaviour
     [SerializeField] private float upwardForce = 2f;
 
     [Header("Climb Settings")]
-    [Header("Height Control")]
-    [SerializeField] private float targetY = 0f;
-    [SerializeField] private float heightStrength = 20f;
-    [SerializeField] private float heightDamping = 9f;
+    [SerializeField] private float upwardAcceleration = 5f;
     [SerializeField] private float wallStickForce = 2f;
 
     private Rigidbody2D rb;
@@ -71,17 +68,12 @@ public class CharacterController : MonoBehaviour
             !hasJumped)
             return;
 
-        // Continuous upward force after the first jump.
-        float positionError = targetY - rb.position.y;
-        float acceleration = positionError * heightStrength
-            - rb.linearVelocityY * heightDamping;
+        // Apply continuous upward acceleration after the first jump.
+        // Compensate gravity so the character keeps rising without a height limit.
         float gravityCompensation = -Physics2D.gravity.y * rb.gravityScale;
-        float forceY = rb.mass * (acceleration + gravityCompensation);
+        float forceY = rb.mass * (upwardAcceleration + gravityCompensation);
 
-        rb.AddForce(
-            Vector2.up * forceY,
-            ForceMode2D.Force
-        );
+        rb.AddForce(Vector2.up * forceY, ForceMode2D.Force);
 
         if (!isTouchingWall)
             return;
