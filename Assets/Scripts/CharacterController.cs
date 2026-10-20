@@ -22,6 +22,7 @@ public class CharacterController : MonoBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+        rb.interpolation = RigidbodyInterpolation2D.Interpolate;
         verticalBorderLayer = LayerMask.NameToLayer("VerticalBorder");
 
         ResetCharacter();
